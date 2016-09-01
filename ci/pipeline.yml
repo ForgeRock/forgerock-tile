@@ -1,0 +1,241 @@
+---
+groups:
+- name: all
+  jobs:
+  - claim-pcf
+  - deploy-tile
+  - test-deploy
+  - remove-tile
+  - release-pcf
+- name: manual
+  jobs:
+  - claim-pcf
+  - manual-release
+
+resources:
+- name: forgerock-tile-repo
+  type: git
+  source:
+    branch: master
+    uri: git@github.com:{{github-repo}}
+    private_key: {{github-repo-private-key}}
+
+- name: tile-generator-repo
+  type: git
+  source:
+    ignore_paths: [ "sample" ]
+    branch: master
+    uri: http://github.com/cf-platform-eng/tile-generator.git
+
+- name: pcf-environment
+  type: pool
+  source:
+    branch: master
+    pool: pcf
+    private_key: {{github-pool-private-key}}
+    uri: git@github.com:cf-platform-eng/pipeline-resource-pool
+
+- name: deploy-tile-log
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    versioned_file: deploy-tile-log.txt
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+- name: test-deploy-log
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    versioned_file: test-deploy-log.txt
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+- name: remove-tile-log
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    versioned_file: remove-tile-log.txt
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+- name: forgerock-tile
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    regexp: .*-(?P<version>.*)\.pivotal
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+- name: missing-properties
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    versioned_file: missing-properties.yml
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+- name: test-deploy-report
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    regexp: test-deploy-report-(?P<version>.*)\.tgz
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+jobs:
+- name: claim-pcf
+  plan:
+  - aggregate:
+    - get: forgerock-tile
+      trigger: true
+    - put: pcf-environment
+      params:
+        acquire: true
+
+- name: deploy-tile
+  plan:
+  - aggregate:
+    - get: tile-generator-repo
+    - get: forgerock-tile
+    - get: pcf-environment
+      passed:
+      - claim-pcf
+      trigger: true
+    - get: forgerock-tile-repo
+    - get: missing-properties
+  - task: run-deploy-tile
+    config:
+      platform: linux
+      image: docker:///guidowb/tile-pipeline
+      inputs:
+      - name: tile-generator-repo
+      - name: pcf-environment
+      - name: forgerock-tile
+      - name: forgerock-tile-repo
+      - name: missing-properties
+      outputs:
+      - name: log
+      run:
+        path: forgerock-tile-repo/ci/scripts/log-output.sh
+        args:
+          - forgerock-tile-repo/ci/scripts/run-deploy-tile.sh
+          - log/deploy-tile-log.txt
+          - tile-generator-repo
+          - forgerock-tile-repo
+          - forgerock-tile
+          - pcf-environment
+          - missing-properties
+    ensure:
+      put: deploy-tile-log
+      params:
+        file: log/deploy-tile-log.txt
+    on_failure:
+      aggregate:
+      - put: pcf-environment
+        params:
+          release: pcf-environment
+
+- name: test-deploy
+  plan:
+  - aggregate:
+    - get: tile-generator-repo
+    - get: pcf-environment
+      passed:
+        - deploy-tile
+      trigger: true
+    - get: forgerock-tile-repo
+    - get: forgerock-tile
+  - task: run-deployment-tests
+    config:
+      platform: linux
+      image: "docker:///guidowb/tile-pipeline"
+      inputs:
+      - name: tile-generator-repo
+      - name: pcf-environment
+      - name: forgerock-tile-repo
+      - name: forgerock-tile
+      outputs:
+      - name: log
+      run:
+        path: forgerock-tile-repo/ci/scripts/log-output.sh
+        args:
+          - forgerock-tile-repo/ci/scripts/run-test-deploy.sh
+          - log/test-deploy-log.txt
+          - tile-generator-repo
+          - pcf-environment
+          - forgerock-tile-repo
+          - log
+          - forgerock-tile
+    ensure:
+      aggregate:
+      - put: test-deploy-log
+        params:
+          file: log/test-deploy-log.txt
+      - put: test-deploy-report
+        params:
+          file: log/test-deploy-report-*.tgz
+    on_failure:
+      aggregate:
+      - put: pcf-environment
+        params:
+          release: pcf-environment
+
+- name: remove-tile
+  plan:
+  - aggregate:
+    - get: tile-generator-repo
+    - get: forgerock-tile-repo
+    - get: pcf-environment
+      passed:
+        - test-deploy
+      trigger: true
+  - task: remove-tile
+    config:
+      platform: linux
+      image: "docker:///guidowb/tile-pipeline"
+      inputs:
+      - name: tile-generator-repo
+      - name: pcf-environment
+      - name: forgerock-tile-repo
+      outputs:
+      - name: log
+      run:
+        path: forgerock-tile-repo/ci/scripts/log-output.sh
+        args:
+          - forgerock-tile-repo/ci/scripts/run-remove-tile.sh
+          - log/remove-tile-log.txt
+          - tile-generator-repo
+          - pcf-environment
+    ensure:
+      put: remove-tile-log
+      params:
+        file: log/remove-tile-log.txt
+    on_failure:
+      aggregate:
+      - put: pcf-environment
+        params:
+          release: pcf-environment
+
+- name: release-pcf
+  plan:
+  - get: pcf-environment
+    passed:
+    - remove-tile
+    trigger: true
+  - put: pcf-environment
+    params:
+      release: pcf-environment
+
+- name: manual-release
+  plan:
+  - get: pcf-environment
+  - put: pcf-environment
+    params:
+      release: pcf-environment
