@@ -5,7 +5,7 @@
 ## Parameters
 TILE_GEN_DIR="$( cd "$1" && pwd )"
 POOL_DIR="$( cd "$2" && pwd )"
-SOLACE_TILE_DIR="$( cd "$3" && pwd )"
+REPO_DIR="$( cd "$3" && pwd )"
 LOG_DIR="$( cd "$4" && pwd )"
 TILE_DIR="$( cd "$5" && pwd )"
 
@@ -45,14 +45,8 @@ cd ${POOL_DIR}
 
 which_pcf
 
-# Insert tests here
-# You have access to the pcf command, and you are in the dir that has the metadata file
-
-# Typical tests here would:
-# - Connect to your deployed services and brokers
-# - Verify that you can create service instances
-# - Bind those to test apps
-# - Make sure the right things happen
+APP_DOMAIN=`$PCF cf-info | grep apps_domain | cut -d" " -f1`
+${REPO_DIR}/ci/scripts/tests.py ${REPO_DIR} ${APP_DOMAIN}
 
 ## Enable or Disable exit on error
 set -e
