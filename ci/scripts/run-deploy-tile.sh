@@ -26,7 +26,7 @@ VERSION=`echo "${TILE_FILE}" | sed "s/.*-//" | sed "s/\.pivotal\$//"`
 
 cd "${POOL_DIR}"
 
-APP_DOMAIN=`$PCF cf-info | grep apps_domain | cut -d" " -f1`
+APP_DOMAIN=`$PCF cf-info | grep apps_domain | cut -d" " -f3`
 
 echo "Available products:"
 $PCF products
@@ -51,7 +51,7 @@ $PCF is-installed "${PRODUCT}" "${VERSION}"
 echo
 
 cat > missing-properties.yml <<EOM
-openam_base_uri: http://mock-openam.${APP_DOMAIN}
+openam_base_uri: http://mock-openam.${APP_DOMAIN}/openam
 openam_username: mock-username
 openam_password:
   secret: mock-password
