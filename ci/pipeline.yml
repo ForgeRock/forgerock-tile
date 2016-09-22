@@ -17,8 +17,8 @@ resources:
   type: git
   source:
     branch: master
-    uri: git@github.com:{{github-repo}}
-    private_key: {{github-repo-private-key}}
+    uri: http://github.com/guidowb/forgerock-tile.git
+
 
 - name: tile-generator-repo
   type: git
@@ -68,15 +68,6 @@ resources:
     bucket: {{s3-bucket}}
     region_name: {{s3-region}}
     regexp: .*-(?P<version>.*)\.pivotal
-    access_key_id: {{s3-access-key}}
-    secret_access_key: {{s3-secret}}
-
-- name: test-deploy-report
-  type: s3
-  source:
-    bucket: {{s3-bucket}}
-    region_name: {{s3-region}}
-    regexp: test-deploy-report-(?P<version>.*)\.tgz
     access_key_id: {{s3-access-key}}
     secret_access_key: {{s3-secret}}
 
@@ -166,9 +157,6 @@ jobs:
       - put: test-deploy-log
         params:
           file: log/test-deploy-log.txt
-      - put: test-deploy-report
-        params:
-          file: log/test-deploy-report-*.tgz
     on_failure:
       aggregate:
       - put: pcf-environment
