@@ -44,9 +44,7 @@ function which_pcf() {
 cd ${POOL_DIR}
 
 which_pcf
+set -ex
 
 APP_DOMAIN=`$PCF cf-info | grep apps_domain | cut -d" " -f3`
 ${REPO_DIR}/ci/scripts/tests.py ${REPO_DIR} ${APP_DOMAIN}
-
-## Enable or Disable exit on error
-set -e
