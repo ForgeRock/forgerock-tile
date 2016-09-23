@@ -47,4 +47,12 @@ which_pcf
 set -ex
 
 APP_DOMAIN=`$PCF cf-info | grep apps_domain | cut -d" " -f3`
+
+$PCF target -o forgerock-broker-org -s forgerock-broker-space
+cf delete-org -f forgerock-broker-tests
+cf create-org forgerock-broker-tests
+cf target -o forgerock-broker-tests
+cf create-space test
+cf target -s test
+
 ${REPO_DIR}/ci/scripts/tests.py ${REPO_DIR} ${APP_DOMAIN}
