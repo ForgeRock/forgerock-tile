@@ -26,11 +26,6 @@ packages:
     path: service-broker-servlet.war
     buildpack: java_buildpack_offline
 
-stemcell_criteria:
-  os: ubuntu-trusty
-  requires_cpi: false
-  version: '3232'
-
 # Add properties you want to pass to your applications.
 # Properties specified here will not be configurable by the user.
 #
