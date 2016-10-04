@@ -1,6 +1,6 @@
 ---
 name: forgerock-broker # By convention lowercase with dashes
-icon_file: resources/logo.png
+icon_file: logo.png
 label: ForgeRock Identity Platform for PCF
 description: Provides integration with the ForgeRock identity platform
 
