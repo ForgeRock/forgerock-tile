@@ -1,18 +1,4 @@
 ---
-groups:
-- name: all
-  jobs:
-  - build-docker
-  - claim-pcf
-  - deploy-tile
-  - test-deploy
-  - remove-tile
-  - release-pcf
-- name: manual
-  jobs:
-  - claim-pcf
-  - manual-release
-
 resources:
 
 - name: dockerfile-repo
@@ -88,6 +74,24 @@ resources:
     access_key_id: {{s3-access-key}}
     secret_access_key: {{s3-secret}}
 
+- name: tile-history
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    regexp: tile\-history-(?P<version>.*)\.yml
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
+- name: forgerock-broker-war
+  type: s3
+  source:
+    bucket: {{s3-bucket}}
+    region_name: {{s3-region}}
+    regexp: service-broker-servlet-(?P<version>.*)\.war
+    access_key_id: {{s3-access-key}}
+    secret_access_key: {{s3-secret}}
+
 jobs:
 
 - name: build-docker
@@ -98,13 +102,62 @@ jobs:
     params:
       build: dockerfile-repo/ci
 
-- name: claim-pcf
+- name: build-tile
   plan:
   - aggregate:
     - get: ci-docker-image
       passed: [ build-docker ]
       trigger: true
+    - get: tile-generator-repo
+      trigger: true
+    - get: forgerock-tile-repo
+      trigger: true
+    - get: forgerock-broker-war
+      trigger: true
+    - get: tile-history
+      trigger: false
+  - task: build-tile
+    image: ci-docker-image
+    config:
+      platform: linux
+      inputs:
+      - name: tile-generator-repo
+      - name: forgerock-tile-repo
+      - name: forgerock-broker-war
+      - name: tile-history
+      outputs:
+      - name: build-dir
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          PATH=`cd tile-generator-repo/bin; pwd`:$PATH
+          cp tile-history/tile-history-*.yml build-dir/tile-history.yml
+          cp forgerock-tile-repo/tile.yml build-dir/tile.yml
+          cp forgerock-tile-repo/logo.png build-dir/logo.png
+          cp forgerock-broker-war/*.war build-dir/service-broker-servlet.war
+          cd build-dir
+          tile build
+          VERSION=`grep '^version:' tile-history.yml | sed 's/^version: //'`
+          HISTORY="tile-history-${VERSION}.yml"
+          mv tile-history.yml tile-history-${VERSION}.yml
+  - aggregate:
+    - put: tile-history
+      params:
+        file: build-dir/tile-history-*.yml
+    - put: forgerock-tile
+      params:
+        file: build-dir/product/*.pivotal
+
+- name: claim-pcf
+  plan:
+  - aggregate:
+    - get: ci-docker-image
+      passed: [ build-tile ]
+      trigger: true
     - get: forgerock-tile
+      passed: [ build-tile ]
       trigger: true
     - put: pcf-environment
       params:
@@ -234,13 +287,6 @@ jobs:
     passed:
     - remove-tile
     trigger: true
-  - put: pcf-environment
-    params:
-      release: pcf-environment
-
-- name: manual-release
-  plan:
-  - get: pcf-environment
   - put: pcf-environment
     params:
       release: pcf-environment
