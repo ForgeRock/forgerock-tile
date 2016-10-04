@@ -20,7 +20,7 @@ resources:
   source:
     paths: [ "ci/Dockerfile" ]
     branch: master
-    uri: http://github.com/guidowb/forgerock-tile.git
+    uri: http://github.com/ForgeRock/forgerock-tile.git
 
 - name: ci-docker-image
   type: docker-image
@@ -35,7 +35,7 @@ resources:
   source:
     ignore_paths: [ "ci/Dockerfile" ]
     branch: master
-    uri: http://github.com/guidowb/forgerock-tile.git
+    uri: http://github.com/ForgeRock/forgerock-tile.git
 
 - name: tile-generator-repo
   type: git
