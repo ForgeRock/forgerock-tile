@@ -5,13 +5,10 @@ set -e
 # echo "### Skipping remove"
 # exit 0
 
-TILE_GEN_DIR="$( cd "$1" && pwd )"
-POOL_DIR="$( cd "$2" && pwd )"
+POOL_DIR="$( cd "$1" && pwd )"
 PRODUCT="forgerock-service-broker-tile"
 
-BIN_DIR="$( cd "${TILE_GEN_DIR}/bin" && pwd )"
-
-PCF="${BIN_DIR}/pcf"
+PCF="pcf"
 
 cd "${POOL_DIR}"
 

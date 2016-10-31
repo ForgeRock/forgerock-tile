@@ -23,13 +23,6 @@ resources:
     branch: master
     uri: http://github.com/ForgeRock/forgerock-tile.git
 
-- name: tile-generator-repo
-  type: git
-  source:
-    ignore_paths: [ "sample" ]
-    branch: master
-    uri: http://github.com/cf-platform-eng/tile-generator.git
-
 - name: pcf-environment
   type: pool
   source:
@@ -108,8 +101,6 @@ jobs:
     - get: ci-docker-image
       passed: [ build-docker ]
       trigger: true
-    - get: tile-generator-repo
-      trigger: true
     - get: forgerock-tile-repo
       trigger: true
     - get: forgerock-broker-war
@@ -121,7 +112,6 @@ jobs:
     config:
       platform: linux
       inputs:
-      - name: tile-generator-repo
       - name: forgerock-tile-repo
       - name: forgerock-broker-war
       - name: tile-history
@@ -132,7 +122,6 @@ jobs:
         args:
         - -exc
         - |
-          PATH=`cd tile-generator-repo/bin; pwd`:$PATH
           cp tile-history/tile-history-*.yml build-dir/tile-history.yml
           cp forgerock-tile-repo/tile.yml build-dir/tile.yml
           cp forgerock-tile-repo/logo.png build-dir/logo.png
@@ -159,6 +148,9 @@ jobs:
     - get: forgerock-tile
       passed: [ build-tile ]
       trigger: true
+    - get: forgerock-tile-repo
+      passed: [ build-tile ]
+      trigger: true
     - put: pcf-environment
       params:
         acquire: true
@@ -166,19 +158,23 @@ jobs:
 - name: deploy-tile
   plan:
   - aggregate:
-    - get: tile-generator-repo
     - get: forgerock-tile
+      passed: [ claim-pcf ]
+      trigger: true
+    - get: ci-docker-image
+      passed: [ claim-pcf ]
+      trigger: true
     - get: pcf-environment
-      passed:
-      - claim-pcf
+      passed: [ claim-pcf ]
       trigger: true
     - get: forgerock-tile-repo
+      passed: [ claim-pcf ]
+      trigger: true
   - task: run-deploy-tile
+    image: ci-docker-image
     config:
       platform: linux
-      image: docker:///guidowb/forgerock-tile-pipeline
       inputs:
-      - name: tile-generator-repo
       - name: pcf-environment
       - name: forgerock-tile
       - name: forgerock-tile-repo
@@ -189,7 +185,6 @@ jobs:
         args:
           - forgerock-tile-repo/ci/scripts/run-deploy-tile.sh
           - log/deploy-tile-log.txt
-          - tile-generator-repo
           - forgerock-tile-repo
           - forgerock-tile
           - pcf-environment
@@ -206,19 +201,23 @@ jobs:
 - name: test-deploy
   plan:
   - aggregate:
-    - get: tile-generator-repo
+    - get: ci-docker-image
+      passed: [ deploy-tile ]
+      trigger: true
     - get: pcf-environment
-      passed:
-        - deploy-tile
+      passed: [ deploy-tile ]
       trigger: true
     - get: forgerock-tile-repo
+      passed: [ deploy-tile ]
+      trigger: true
     - get: forgerock-tile
+      passed: [ deploy-tile ]
+      trigger: true
   - task: run-deployment-tests
+    image: ci-docker-image
     config:
       platform: linux
-      image: "docker:///guidowb/forgerock-tile-pipeline"
       inputs:
-      - name: tile-generator-repo
       - name: pcf-environment
       - name: forgerock-tile-repo
       - name: forgerock-tile
@@ -229,7 +228,6 @@ jobs:
         args:
           - forgerock-tile-repo/ci/scripts/run-test-deploy.sh
           - log/test-deploy-log.txt
-          - tile-generator-repo
           - pcf-environment
           - forgerock-tile-repo
           - log
@@ -248,18 +246,20 @@ jobs:
 - name: remove-tile
   plan:
   - aggregate:
-    - get: tile-generator-repo
     - get: forgerock-tile-repo
+      passed: [ test-deploy ]
+      trigger: true
+    - get: ci-docker-image
+      passed: [ test-deploy ]
+      trigger: true
     - get: pcf-environment
-      passed:
-        - test-deploy
+      passed: [ test-deploy ]
       trigger: true
   - task: remove-tile
+    image: ci-docker-image
     config:
       platform: linux
-      image: "docker:///guidowb/forgerock-tile-pipeline"
       inputs:
-      - name: tile-generator-repo
       - name: pcf-environment
       - name: forgerock-tile-repo
       outputs:
@@ -269,7 +269,6 @@ jobs:
         args:
           - forgerock-tile-repo/ci/scripts/run-remove-tile.sh
           - log/remove-tile-log.txt
-          - tile-generator-repo
           - pcf-environment
     ensure:
       put: remove-tile-log
@@ -284,8 +283,7 @@ jobs:
 - name: release-pcf
   plan:
   - get: pcf-environment
-    passed:
-    - remove-tile
+    passed: [ remove-tile ]
     trigger: true
   - put: pcf-environment
     params:

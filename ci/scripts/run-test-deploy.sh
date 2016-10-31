@@ -3,11 +3,10 @@
 ####################################### GLOBAL VARS ###########################################
 
 ## Parameters
-TILE_GEN_DIR="$( cd "$1" && pwd )"
-POOL_DIR="$( cd "$2" && pwd )"
-REPO_DIR="$( cd "$3" && pwd )"
-LOG_DIR="$( cd "$4" && pwd )"
-TILE_DIR="$( cd "$5" && pwd )"
+POOL_DIR="$( cd "$1" && pwd )"
+REPO_DIR="$( cd "$2" && pwd )"
+LOG_DIR="$( cd "$3" && pwd )"
+TILE_DIR="$( cd "$4" && pwd )"
 
 
 TILE_FILE=`cd "${TILE_DIR}"; ls *.pivotal`
@@ -24,7 +23,7 @@ echo "PRODUCT: $PRODUCT"
 echo "VERSION: $VERSION"
 
 ## Commands
-PCF=${TILE_GEN_DIR}/bin/pcf
+PCF=pcf
 
 ####################################### FUNCTIONS ###########################################
 

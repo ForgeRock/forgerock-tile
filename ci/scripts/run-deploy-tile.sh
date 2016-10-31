@@ -2,17 +2,11 @@
 
 set -ex
 
-TILE_GEN_DIR="$( cd "$1" && pwd )"
-REPO_DIR="$( cd "$2" && pwd )"
-TILE_DIR="$( cd "$3" && pwd )"
-POOL_DIR="$( cd "$4" && pwd )"
+REPO_DIR="$( cd "$1" && pwd )"
+TILE_DIR="$( cd "$2" && pwd )"
+POOL_DIR="$( cd "$3" && pwd )"
 
-# echo "### Skipping deploy"
-# exit 0
-
-BIN_DIR="$( cd "${TILE_GEN_DIR}/bin" && pwd )"
-
-PCF="${BIN_DIR}/pcf"
+PCF="pcf"
 
 TILE_FILE=`cd "${TILE_DIR}"; ls *.pivotal`
 if [ -z "${TILE_FILE}" ]; then
