@@ -5,8 +5,17 @@ set -e
 # echo "### Skipping remove"
 # exit 0
 
-POOL_DIR="$( cd "$1" && pwd )"
-PRODUCT="forgerock-service-broker-tile"
+TILE_DIR="$( cd "$1" && pwd )"
+POOL_DIR="$( cd "$2" && pwd )"
+
+TILE_FILE=`cd "${TILE_DIR}"; ls *.pivotal`
+if [ -z "${TILE_FILE}" ]; then
+	echo "No files matching ${TILE_DIR}/*.pivotal"
+	ls -lR "${TILE_DIR}"
+	exit 1
+fi
+
+PRODUCT=`echo "${TILE_FILE}" | sed "s/-[^-]*$//"`
 
 PCF="pcf"
 

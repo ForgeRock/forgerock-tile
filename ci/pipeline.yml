@@ -255,12 +255,16 @@ jobs:
     - get: pcf-environment
       passed: [ test-deploy ]
       trigger: true
+    - get: forgerock-tile
+      passed: [ test-deploy ]
+      trigger: true
   - task: remove-tile
     image: ci-docker-image
     config:
       platform: linux
       inputs:
       - name: pcf-environment
+      - name: forgerock-tile
       - name: forgerock-tile-repo
       outputs:
       - name: log
@@ -269,6 +273,7 @@ jobs:
         args:
           - forgerock-tile-repo/ci/scripts/run-remove-tile.sh
           - log/remove-tile-log.txt
+          - forgerock-tile
           - pcf-environment
     ensure:
       put: remove-tile-log
