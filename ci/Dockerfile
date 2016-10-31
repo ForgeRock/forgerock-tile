@@ -1,4 +1,4 @@
-FROM guidowb/tile-pipeline
+FROM cfplatformeng/tile-generator
 
 RUN apk add --no-cache curl
 
