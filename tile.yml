@@ -64,3 +64,11 @@ forms:
     type: string
     label: OAuth 2.0 Scopes
     description: The scopes that clients are allowed to request. Scopes are space separated.
+- name: openig
+  label: OpenIG
+  description: OpenIG Configuration
+  properties:
+  - name: openig_base_uri
+    type: string
+    label: Location
+
