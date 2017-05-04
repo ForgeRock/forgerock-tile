@@ -45,6 +45,7 @@ $PCF is-installed "${PRODUCT}" "${VERSION}"
 echo
 
 cat > missing-properties.yml <<EOM
+openig_base_uri: https://openig.${APP_DOMAIN}/
 openam_base_uri: http://mock-openam.${APP_DOMAIN}/openam
 openam_username: mock-username
 openam_password:
