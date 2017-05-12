@@ -44,8 +44,8 @@ packages:
 # 
 forms:
 - name: openam
-  label: OpenAM
-  description: OpenAM Configuration
+  label: Access Management
+  description: ForgeRock Access Management Configuration
   properties:
   - name: openam_base_uri
     type: string
@@ -65,8 +65,8 @@ forms:
     label: OAuth 2.0 Scopes
     description: The scopes that clients are allowed to request. Scopes are space separated.
 - name: openig
-  label: OpenIG
-  description: OpenIG Configuration
+  label: Identity Gateway
+  description: ForgeRock Identity Gateway Configuration
   properties:
   - name: openig_base_uri
     type: string
