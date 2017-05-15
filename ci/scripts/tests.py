@@ -20,7 +20,7 @@ def create_url(app_name):
     return "http://" + app_name + "." + args.app_domain
 
 def create_service(service_name):
-    subprocess.check_call(["cf", "create-service", "openam-oauth2", "shared", service_name])
+    subprocess.check_call(["cf", "create-service", "forgerock-am-oauth2", "shared", service_name])
 
 def bind_service(service_name):
     subprocess.check_call(["cf", "bind-service", test_app, service_name])
@@ -59,7 +59,7 @@ class IntegrationTests(unittest.TestCase):
 
     def test_marketplace_shows_openam_service(self):
         output = subprocess.check_output(["cf", "marketplace"])
-        self.assertTrue(output.find("openam-oauth2") != -1)
+        self.assertTrue(output.find("forgerock-am-oauth2") != -1)
 
     def test_bind_provides_appropriate_environment_variables(self):
         bind_service(service_instance_name)
@@ -68,9 +68,9 @@ class IntegrationTests(unittest.TestCase):
 
         create_agent_request = filter(lambda x: x["path"] == "/openam/json/test-realm/agents" and x["method"] == "POST", requests)[0]
 
-        self.assertEqual(env["openam-oauth2"][0]["credentials"]["uri"], create_url(mock_openam_app) + "/openam/oauth2/test-realm/")
-        self.assertEqual(env["openam-oauth2"][0]["credentials"]["username"], create_agent_request["body"]["username"])
-        self.assertEqual(env["openam-oauth2"][0]["credentials"]["password"], create_agent_request["body"]["userpassword"])
+        self.assertEqual(env["forgerock-am-oauth2"][0]["credentials"]["uri"], create_url(mock_openam_app) + "/openam/oauth2/test-realm/")
+        self.assertEqual(env["forgerock-am-oauth2"][0]["credentials"]["username"], create_agent_request["body"]["username"])
+        self.assertEqual(env["forgerock-am-oauth2"][0]["credentials"]["password"], create_agent_request["body"]["userpassword"])
 
     def test_bind_creates_oauth2_client_with_correct_parameters(self):
         bind_service(service_instance_name)
@@ -81,7 +81,7 @@ class IntegrationTests(unittest.TestCase):
     def test_unbind_deletes_oauth2_client(self):
         bind_service(service_instance_name)
         env = get_test_app_environment()
-        username = env["openam-oauth2"][0]["credentials"]["username"]
+        username = env["forgerock-am-oauth2"][0]["credentials"]["username"]
         unbind_service(service_instance_name)
         requests = get_mock_openam_requests()
         delete_agent_requests = filter(lambda x: x["path"] == "/openam/json/test-realm/agents/" + username and x["method"] == "DELETE", requests)
