@@ -1,7 +1,7 @@
 ---
 name: forgerock-broker # By convention lowercase with dashes
 icon_file: logo.png
-label: ForgeRock Identity Platform for VMWare Tanzu
+label: ForgeRock Identity Platform for VMware Tanzu
 description: Provides integration with the ForgeRock identity platform
 
 # Global defaults (all optional)
