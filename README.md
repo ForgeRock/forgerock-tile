@@ -7,3 +7,5 @@ The service broker for cloud foundry facilitates use of Identity Gateway as a Cl
 Source code of the service broker is available (under CDDL licence) at
 https://stash.forgerock.org/projects/CLOUD/repos/cloudfoundry-service-broker/browse/service-broker
 
+# Further Reading
+In order to configure Identity Gateway as a Cloud Foundry route service without a service broker, see this article https://backstage.forgerock.com/knowledge/kb/article/a67702030
